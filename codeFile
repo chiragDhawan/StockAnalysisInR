@@ -1,0 +1,231 @@
+times<-read.csv(file.choose())
+
+head(times)
+times$date = as.Date(times$date,format="%d/%m/%Y") ###### convert date into date format
+head(times)
+View(times)
+######## Initial plot 
+
+###plot goes down because initial index contains latest values
+par(mfrow=c(2,2))
+plot(times$apple,main="Apple")
+plot(times$microsoft,main="Microsoft")
+plot(times$HPQ,main="HP")
+plot(times$google,main="Google")
+
+#######Install package dplyr
+###### arranging it in increasing time#######
+times1<-times%>%
+  arrange(date)%>%
+  select(date,apple,microsoft,HPQ,google)
+
+######### The graph is according to index or points  
+plot(times1$apple,main="Apple",col="Red",col.main="Red")
+plot(times1$microsoft,main="Microsoft",col.main="Green",col="Green")
+plot(times1$HPQ,main="HPQ",col.main="Blue",col="Blue")
+plot(times1$google,main="Google",col.main="Orange",col="Orange")
+
+## Install xts package
+###### Making it an xts object---------- xts==Extensible Time series Object
+x1<-xts(as.matrix(times1[,2:5]),order.by = times1$date)
+
+####### plot again
+plot(x1$apple,main="Apple")
+plot(x1$microsoft,main="Microsoft")
+plot(x1$HPQ,main="HPQ")
+plot(x1$google,main="Google")
+
+###### Install "forecast" package
+######### Plotting forecast 90 units/days ahead 
+plot(forecast(ets(x1$apple),h=90),main="Apple")
+plot(forecast(ets(x1$microsoft),h=90),main="Microsoft")
+plot(forecast(ets(x1$HPQ),h=90),main="HPQ")
+plot(forecast(ets(x1$google),h=90),main="Google")
+
+################## showing subset of indices to show forecast clearly
+plot(forecast(ets(x1$apple[2200:2516,]),h=90),main="Apple") 
+plot(forecast(ets(x1$microsoft[2200:2516,]),h=90),main="Microsoft") 
+plot(forecast(ets(x1$HPQ[2200:2516,]),h=90),main="HPQ")              
+plot(forecast(ets(x1$google[2200:2516,]),h=90),main="Google")        
+
+
+################## Showing plots with different models of errors and trends
+### Apple
+
+plot(forecast(ets(x1$apple[2200:2516,],model='MNN'),h=90),main="Apple_Mul-None") 
+plot(forecast(ets(x1$apple[2200:2516,],model='MMN'),h=90),main="Apple_Mul-Mul")
+plot(forecast(ets(x1$apple[2200:2516,],model='MAN'),h=90),main="Apple_Mul-Add")
+plot(forecast(ets(x1$apple[2200:2516,],model='AAN'),h=90),main="Apple_Add-Add")
+
+
+### Microsoft
+
+plot(forecast(ets(x1$microsoft[2200:2516,],model='MNN'),h=90),main="Microsoft_Mul-None") 
+plot(forecast(ets(x1$microsoft[2200:2516,],model='MMN'),h=90),main="Microsoft_Mul-Mul")
+plot(forecast(ets(x1$microsoft[2200:2516,],model='MAN'),h=90),main="Microsoft_Mul-Add")
+plot(forecast(ets(x1$microsoft[2200:2516,],model='AAN'),h=90),main="Microsoft_Add-Add")
+
+
+### HPQ
+
+plot(forecast(ets(x1$HPQ[2200:2516,],model='MNN'),h=90),main="HPQ_Mul-None") 
+plot(forecast(ets(x1$HPQ[2200:2516,],model='MMN'),h=90),main="HPQ_Mul-Mul")
+plot(forecast(ets(x1$HPQ[2200:2516,],model='MAN'),h=90),main="HPQ_Mul-Add")
+plot(forecast(ets(x1$HPQ[2200:2516,],model='AAN'),h=90),main="HPQ_Add-Add")
+
+
+### Google
+
+plot(forecast(ets(x1$google[2200:2516,],model='MNN'),h=90),main="Google_Mul-None") 
+plot(forecast(ets(x1$google[2200:2516,],model='MMN'),h=90),main="Google_Mul-Mul")
+plot(forecast(ets(x1$google[2200:2516,],model='MAN'),h=90),main="Google_Mul-Add")
+plot(forecast(ets(x1$google[2200:2516,],model='AAN'),h=90),main="Google_Add-Add")
+
+########################## Dividing into training and testing
+############ 
+################# To Choose the best model for each stock
+######### Using MAPE as the criteria on the test set
+
+
+####### APPLE
+
+appletrain<-x1$apple[1:2426,]
+appletest<-x1$apple[2426:2516,]
+
+fit1<-ets(appletrain,model='MNN')
+fit2<-ets(appletrain,model='MMN')
+fit3<-ets(appletrain,model='MAN')
+fit4<-ets(appletrain,model='AAN')
+fit_app_arima<-auto.arima(appletrain)
+
+fcast1<-forecast(fit1,h=90)
+fcast2<-forecast(fit2,h=90)
+fcast3<-forecast(fit3,h=90)
+fcast4<-forecast(fit4,h=90)
+fcast_app_arima<-forecast(fit_app_arima,h=90)
+
+accuracy(fcast1,appletest)
+accuracy(fcast2,appletest)
+accuracy(fcast3,appletest)
+accuracy(fcast4,appletest)
+accuracy(fcast_app_arima,appletest)
+
+####### Microsoft
+
+microtrain<-x1$microsoft[1:2426,]
+microtest<-x1$microsoft[2426:2516,]
+
+fit5<-ets(microtrain,model='MNN')
+fit6<-ets(microtrain,model='MMN')
+fit7<-ets(microtrain,model='MAN')
+fit8<-ets(microtrain,model='AAN')
+fit_micro_arima<-auto.arima(microtrain)
+
+
+fcast5<-forecast(fit5,h=90)
+fcast6<-forecast(fit6,h=90)
+fcast7<-forecast(fit7,h=90)
+fcast8<-forecast(fit8,h=90)
+fcast_micro_arima<-forecast(fit_micro_arima,h=90)
+
+
+accuracy(fcast5,microtest)
+accuracy(fcast6,microtest)
+accuracy(fcast7,microtest)
+accuracy(fcast8,microtest)
+accuracy(fcast_micro_arima,microtest)
+
+####### HPQ
+
+hpqtrain<-x1$HPQ[1:2426,]
+hpqtest<-x1$HPQ[2426:2516,]
+
+fit9<-ets(hpqtrain,model='MNN')
+fit10<-ets(hpqtrain,model='MMN')
+fit11<-ets(hpqtrain,model='MAN')
+fit12<-ets(hpqtrain,model='AAN')
+fit_hpq_arima<-auto.arima(hpqtrain)
+
+fcast9<-forecast(fit8,h=90)
+fcast10<-forecast(fit9,h=90)
+fcast11<-forecast(fit10,h=90)
+fcast12<-forecast(fit11,h=90)
+fcast_hpq_arima<-forecast(fit_hpq_arima,h=90)
+
+accuracy(fcast9,hpqtest)
+accuracy(fcast10,hpqtest)
+accuracy(fcast11,hpqtest)
+accuracy(fcast12,hpqtest)
+accuracy(fcast_hpq_arima,hpqtest)
+
+########Google
+
+googtrain<-x1$google[1:2426,]
+googtest<-x1$google[2426:2516,]
+
+fit13<-ets(googtrain,model='MNN')
+fit14<-ets(googtrain,model='MMN')
+fit15<-ets(googtrain,model='MAN')
+fit16<-ets(googtrain,model='AAN')
+fit_google_arima<-auto.arima(googtrain)
+
+fcast13<-forecast(fit13,h=90)
+fcast14<-forecast(fit14,h=90)
+fcast15<-forecast(fit15,h=90)
+fcast16<-forecast(fit16,h=90)
+fcast_google_arima<-forecast(fit_google_arima,h=90)
+
+accuracy(fcast13,googtest)
+accuracy(fcast14,googtest)
+accuracy(fcast15,googtest)
+accuracy(fcast16,googtest)
+accuracy(fcast_google_arima,googtest)
+
+############################################## SVM regression "e1071 package"
+train<-1:2426
+test<-2426:2516
+### Apple
+fit_apple<-svm(train,times1$apple[1:2426],data=times1)
+pr_apple<-predict(fit_apple,test)
+MAPE_apple<-mean(abs(pr_apple-times1$apple[2426:2516])/times1$apple[2426:2516])*100
+MAPE_apple
+
+
+### MICROSOFT
+fit_microsoft<-svm(train,times1$microsoft[1:2426],data=times1)
+pr_microsoft<-predict(fit_microsoft,test)
+MAPE_microsoft<-mean(abs(pr_microsoft-times1$microsoft[2426:2516])/times1$microsoft[2426:2516])*100
+MAPE_microsoft
+
+########### HPQ
+fit_hpq<-svm(train,times1$HPQ[1:2426],data=times1)
+pr_hpq<-predict(fit_hpq,test)
+MAPE_hpq<-mean(abs(pr_hpq-times1$HPQ[2426:2516])/times1$HPQ[2426:2516])*100
+MAPE_hpq
+
+################ google  
+fit_google<-svm(train,times1$google[1:2426],data=times1)
+pr_google<-predict(fit_google,test)
+MAPE_google<-mean(abs(pr_google-times1$google[2426:2516])/times1$google[2426:2516])*100
+MAPE_google
+
+
+####################FORECAST AFTER 90 units
+pnts<-1:2516
+appfit<-svm(pnts,times1$apple,data=times1)
+apple_final<-predict(appfit,2606)
+apple_final
+
+microsoft_final<-forecast(ets(x1$microsoft,model='MNN'),h=90)
+microsoft_final
+
+HPQ_final<-forecast(ets(x1$HPQ,model='MMN'),h=90)
+HPQ_final
+
+google_final<-forecast(ets(x1$google,model='MMN'),h=90)
+google_final
+######################################################################
+## END
+##################
+
+
